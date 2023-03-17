@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.TableDescriptorBuilder;
 import org.apache.hadoop.hbase.master.HMaster;
 import org.apache.hadoop.hbase.regionserver.HRegionServer;
 import org.apache.hadoop.hbase.security.User;
@@ -36,6 +38,7 @@ import org.apache.hadoop.hbase.util.Threads;
 import org.apache.yetus.audience.InterfaceAudience;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class creates a single process HBase cluster. One thread is created for a master and one per
@@ -431,15 +434,21 @@ public class LocalHBaseCluster {
     Configuration conf = HBaseConfiguration.create();
     LocalHBaseCluster cluster = new LocalHBaseCluster(conf);
     cluster.startup();
-    Connection connection = ConnectionFactory.createConnection(conf);
-    Admin admin = connection.getAdmin();
-    try {
-      HTableDescriptor htd = new HTableDescriptor(TableName.valueOf(cluster.getClass().getName()));
-      admin.createTable(htd);
+
+    try (Connection connection = ConnectionFactory.createConnection(conf);
+      Admin admin = connection.getAdmin()) {
+      TableName name = TableName.valueOf(cluster.getClass().getName());
+      if (admin.tableExists(name)) {
+        if (admin.isTableEnabled(name)) {
+          admin.disableTable(name);
+        }
+        admin.deleteTable(name);
+      }
+      admin.createTable(TableDescriptorBuilder.newBuilder(name)
+        .setColumnFamily(ColumnFamilyDescriptorBuilder.newBuilder("test".getBytes(UTF_8)).build())
+        .build());
     } finally {
-      admin.close();
+      cluster.shutdown();
     }
-    connection.close();
-    cluster.shutdown();
   }
 }
