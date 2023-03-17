@@ -37,8 +37,7 @@ import org.apache.hbase.thirdparty.io.netty.util.internal.ObjectUtil;
  * which one (relocated or not) to use. Do not use this to process HBase's shaded protobuf messages.
  * This is meant to process the protobuf messages in HDFS for the asyncfs use case.
  */
-@InterfaceAudience.Private
-public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
+@InterfaceAudience.Private public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
   private static final Logger LOG = LoggerFactory.getLogger(ProtobufDecoder.class);
 
   private static Class<?> protobufMessageLiteClass = null;
@@ -60,8 +59,14 @@ public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
     try {
       Method getDefaultInstanceForTypeMethod =
         protobufMessageLiteClass.getMethod("getDefaultInstanceForType");
-      Object prototype1 =
-        getDefaultInstanceForTypeMethod.invoke(ObjectUtil.checkNotNull(prototype, "prototype"));
+      Object prototype1 = null;
+      try {
+        prototype1 =
+          getDefaultInstanceForTypeMethod.invoke(ObjectUtil.checkNotNull(prototype, "prototype"));
+      } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+        throw new RuntimeException(
+          "Unable to access prototype from " + prototype + "(" + prototype.getClass() + ")", e);
+      }
 
       // parser = prototype.getParserForType()
       parser = getParserForTypeMethod.invoke(prototype1);
@@ -114,14 +119,14 @@ public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
     protobufMessageLiteClass = com.google.protobuf.MessageLite.class;
     protobufMessageLiteBuilderClass = com.google.protobuf.MessageLite.Builder.class;
 
-//    try {
-//      protobufMessageLiteClass = Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite");
-//      protobufMessageLiteBuilderClass =
-//        Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite$Builder");
-//      LOG.debug("Hadoop 3.3 and above shades protobuf.");
-//    } catch (ClassNotFoundException e) {
-//      LOG.debug("Hadoop 3.2 and below use unshaded protobuf.", e);
-//    }
+    //    try {
+    //      protobufMessageLiteClass = Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite");
+    //      protobufMessageLiteBuilderClass =
+    //        Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite$Builder");
+    //      LOG.debug("Hadoop 3.3 and above shades protobuf.");
+    //    } catch (ClassNotFoundException e) {
+    //      LOG.debug("Hadoop 3.2 and below use unshaded protobuf.", e);
+    //    }
 
     try {
       getParserForTypeMethod = protobufMessageLiteClass.getDeclaredMethod("getParserForType");
