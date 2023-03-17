@@ -114,14 +114,14 @@ public class ProtobufDecoder extends MessageToMessageDecoder<ByteBuf> {
     protobufMessageLiteClass = com.google.protobuf.MessageLite.class;
     protobufMessageLiteBuilderClass = com.google.protobuf.MessageLite.Builder.class;
 
-    try {
-      protobufMessageLiteClass = Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite");
-      protobufMessageLiteBuilderClass =
-        Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite$Builder");
-      LOG.debug("Hadoop 3.3 and above shades protobuf.");
-    } catch (ClassNotFoundException e) {
-      LOG.debug("Hadoop 3.2 and below use unshaded protobuf.", e);
-    }
+//    try {
+//      protobufMessageLiteClass = Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite");
+//      protobufMessageLiteBuilderClass =
+//        Class.forName("org.apache.hadoop.thirdparty.protobuf.MessageLite$Builder");
+//      LOG.debug("Hadoop 3.3 and above shades protobuf.");
+//    } catch (ClassNotFoundException e) {
+//      LOG.debug("Hadoop 3.2 and below use unshaded protobuf.", e);
+//    }
 
     try {
       getParserForTypeMethod = protobufMessageLiteClass.getDeclaredMethod("getParserForType");
